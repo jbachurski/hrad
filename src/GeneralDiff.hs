@@ -5,6 +5,7 @@
 module GeneralDiff where
 
 import Data.List
+import Data.Array
 
 class AD a t where
   (|+|) :: a t -> a t -> a t
@@ -45,7 +46,7 @@ instance (AD a t, Floating t) => Floating (a t) where
 data B a = B a (a -> [(Int, a)] -> [(Int, a)])
 
 instance (Num a, Show a) => Show (B a) where
-  show (B u go) = "B " ++ show u ++ " ε" ++ show (indexSums $ go 1 [])
+  show (B u go) = "B " ++ show u ++ " ε" ++ show (atSum $ go 1 [])
 
 valB :: B a -> a
 valB (B u _) = u
@@ -63,20 +64,15 @@ instance Num t => AD B t where
   (|><|) f f' (B u goU) = B (f u) (\d -> goU (d * f' u))
   constAD = constB
 
-indexSums :: Num a => [(Int, a)] -> [a]
-indexSums vs = 
-  let
-    n = if null vs then 0 else maximum (map fst vs)
-    vs' = sortBy (\(i, xi) (j, xj) -> compare i j) $ vs ++ zip [0..n] (replicate n 0)
-  in
-    map (sum . map snd) $ groupBy (\(i, xig) (j, xj) -> i == j) vs'
+atSum :: (Ix i, Num e, Num i) => [(i, e)] -> [e]
+atSum ps = elems $ accumArray (+) 0 (0, n) ps where n = if null ps then -1 else maximum (map fst ps)
 
 gradientB :: ([B a] -> t) -> [a] -> t
 gradientB f x = f (zipWith idB [0..] x)
 gradientContributions :: Num a => ([B b] -> B a) -> [b] -> [(Int, a)]
 gradientContributions f x = goB (gradientB f x) 1 []
 gradient :: Num a => ([B b] -> B a) -> [b] -> [a]
-gradient f x = indexSums (gradientContributions f x)
+gradient f x = atSum $ gradientContributions f x
 
 data D a = D a a deriving (Eq, Show)
 valD :: D a -> a

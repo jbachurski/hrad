@@ -14,9 +14,9 @@ relu :: Fractional a => a -> a
 relu x = (abs x + x) / 2
 
 network :: [Layer (B Double)]
-network = [Dim 1, Perceptron 3, Activation relu, Perceptron 3, Activation relu, Perceptron 1, Dim 1]
+network = [Dim 1, Perceptron 3, Activation sigmoid, Perceptron 3, Activation sigmoid, Perceptron 1, Dim 1]
 
-initWeights n = replicateM n (randomRIO (-1.2,1.2::Double))
+initWeights n = replicateM n (randomRIO (-1,1::Double))
 
 xsExample :: [[B Double]]
 xsExample = map (singleton . constB) [-3,-2.5..3]
@@ -40,7 +40,7 @@ main = do
   setStdGen $ mkStdGen 1337
   ps0 <- initWeights $ parameterCount network
   let
-    stops = [0, 1, 2, 5, 10, 20, 50, 100, 200, 1000]
+    stops = [0, 1, 2, 5, 10, 20, 50, 100, 200, 1000, 5000]
     netEpoch = epoch network loss 5e-3
     training = zip stops $ reps netEpoch ps0 stops
     desc i =
