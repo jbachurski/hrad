@@ -10,13 +10,16 @@ import NeuralNet
 sigmoid :: Floating a => a -> a
 sigmoid x = 1 / (1 + exp (-x))
 
-network :: [Layer (B Double)]
-network = [Dim 1, Perceptron 5, Activation sigmoid, Perceptron 5, Activation sigmoid, Perceptron 1, Dim 1]
+relu :: Fractional a => a -> a
+relu x = (abs x + x) / 2
 
-initWeights n = replicateM n (randomRIO (-1,1::Double))
+network :: [Layer (B Double)]
+network = [Dim 1, Perceptron 3, Activation relu, Perceptron 3, Activation relu, Perceptron 1, Dim 1]
+
+initWeights n = replicateM n (randomRIO (-1.2,1.2::Double))
 
 xsExample :: [[B Double]]
-xsExample = map (singleton . constB) [-3,-2.8..3]
+xsExample = map (singleton . constB) [-3,-2.5..3]
 ysExample :: [[B Double]]
 ysExample = map (singleton . (\[x] -> cos x)) xsExample
 loss :: ([B Double] -> [B Double]) -> B Double
@@ -37,7 +40,7 @@ main = do
   setStdGen $ mkStdGen 1337
   ps0 <- initWeights $ parameterCount network
   let
-    stops = [0, 1, 2, 5, 10, 20, 50, 100, 200]
+    stops = [0, 1, 2, 5, 10, 20, 50, 100, 200, 1000]
     netEpoch = epoch network loss 5e-3
     training = zip stops $ reps netEpoch ps0 stops
     desc i =
