@@ -13,17 +13,14 @@ sigmoid x = 1 / (1 + exp (-x))
 relu :: Fractional a => a -> a
 relu x = (abs x + x) / 2
 
-network :: [Layer (B Double)]
-network = [Dim 1, Perceptron 3, Activation sigmoid, Perceptron 3, Activation sigmoid, Perceptron 1, Dim 1]
+networkArch :: [Layer (B Double)]
+networkArch = [Perceptron 1 3 [], Activation sigmoid, Perceptron 3 3 [], Activation sigmoid, Perceptron 3 1 []]
 
-initWeights n = replicateM n (randomRIO (-1,1::Double))
+initWeights n = replicateM n (randomRIO (-2,2::Double))
 
-xsExample :: [[B Double]]
-xsExample = map (singleton . constB) [-3,-2.5..3]
-ysExample :: [[B Double]]
-ysExample = map (singleton . (\[x] -> cos x)) xsExample
-loss :: ([B Double] -> [B Double]) -> B Double
-loss = mse xsExample ysExample
+xsExample = map singleton [-3,-2.5..3] :: [[Double]]
+ysExample = map cos <$> xsExample
+loss = mse (map constB <$> xsExample) (map constB <$> ysExample)
 
 reps :: (Ord a, Num a) => (t -> t) -> t -> [a] -> [t]
 reps f =
@@ -38,19 +35,20 @@ reps f =
 
 main = do
   setStdGen $ mkStdGen 1337
-  ps0 <- initWeights $ parameterCount network
+  paramsIni <- initWeights (parameterCount networkArch)
+  print "Hello!"
   let
-    stops = [0, 1, 2, 5, 10, 20, 50, 100, 200, 1000, 5000]
-    netEpoch = epoch network loss 5e-3
-    training = zip stops $ reps netEpoch ps0 stops
+    networkIni = networkWithParameters networkArch (map constB paramsIni)
+    stops = [0, 1, 2, 5, 10, 20, 50, 100, 200, 1000, 5000, 20000, 50000]
+    training = zip stops $ reps (networkGradientStep loss 5e-3) networkIni stops
+    final = snd $ last training
     desc i =
       let
-        (j, ps) = training !! i
-        l = valB $ loss (predict network (map constB ps))
+        (j, network) = training !! i
+        l = valB $ loss (predict network)
       in putStrLn $ "Epoch " ++ show j ++ ": " ++ show l -- ++ ", " ++ show ps ++ "; " ++ show (gradientB (loss . predict network) ps)
-  print $ parameterCount network
   print $ loss (sin <$>)
   print $ length training
   mapM_ desc [0..length stops - 1]
-  print $ map valB $ concat ysExample
-  print $ map valB $ concatMap (predict network (map constB $ snd $ last training)) xsExample
+  print ysExample
+  print $ map valB <$> map (predict final) (map constB <$> xsExample)

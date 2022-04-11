@@ -4,7 +4,6 @@
 
 module GeneralDiff where
 
-import Data.List
 import Data.Array
 
 class AD a t where
