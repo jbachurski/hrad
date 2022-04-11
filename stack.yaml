@@ -42,6 +42,10 @@ packages:
 #
 # extra-deps: []
 
+extra-deps:
+- Chart-cairo-1.9.3@sha256:f79100109af9c83f65d23c3409b2a449820e523d468d1f2340f2dd36acfd237d,924
+- cairo-0.13.8.2@sha256:ef1709c3c4d2c6d68a9a51d9f220dccc0745f6468d2d0868c15a7ecdf8f325a1,4078
+
 # Override default flag values for local packages and extra-deps
 # flags: {}
 

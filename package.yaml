@@ -23,6 +23,8 @@ dependencies:
 - base
 - random
 - array
+- Chart
+- Chart-cairo
 
 library:
   source-dirs: src
