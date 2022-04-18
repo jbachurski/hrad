@@ -1,6 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, UndecidableInstances #-}
 
 module GeneralDiff where
 
@@ -92,3 +90,14 @@ instance Num t => AD D t where
 
 monogradient :: Num a => ([D a] -> D b) -> [a] -> [b]
 monogradient f x = map (\i -> difD . f $ zipWith (\j -> if i == j then idD else constD) [0..] x) [0..length x - 1]
+
+
+data GradientDescent b a = GD a (a -> b -> a)
+
+descending c = GD c (\δ x -> c - δ)
+
+instance Num a => AD (GradientDescent b) a where
+  (|+|) (GD u descU) (GD v descV) = GD (u + v) (\δ x -> descU δ x + descV δ x)
+  (|*|) (GD u descU) (GD v descV) = GD (u * v) (\δ x -> descU (v * δ) x * v + descV (u * δ) x)
+  (|><|) f f' (GD u desc) = GD (f u) (\δ x -> desc (f' u * δ) x)
+  constAD c = GD c (\δ x -> c)
